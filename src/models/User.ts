@@ -1,36 +1,39 @@
-import mongoose, { Document, Schema } from "mongoose";
-import mongooseLong from "mongoose-long";
+import mongoose, { type Document, Schema, type Types } from "mongoose";
 
-// Register mongoose-long plugin
-mongooseLong(mongoose);
+/**
+ * Represents the data structure for a user document.
+ *
+ * @property {string} email - The unique email address of the user.
+ * @property {string} password - The bcrypt-hashed password of the user.
+ * @property {string} firstName - The first name of the user.
+ * @property {string} [lastName] - The last name of the user (optional).
+ */
+export interface UserData {
+	email: string;
+	password: string;
+	firstName: string;
+	lastName?: string;
+	isVerified: boolean;
+	otp?: string;
+	otpExpiry?: Date;
+}
 
-// Define UserDocument interface
-export type UserDocument = Document & {
-  _id: number;
-  firstName: string;
-  lastName?: string;
-  username?: string;
-  isPremium?: boolean;
-  languageCode: string;
-  allowsWriteToPm: boolean;
-  referralCode: string;
-};
+export type UserDocument = Document<Types.ObjectId> & UserData;
 
 // Create UserSchema
 const UserSchema = new Schema<UserDocument>(
-  {
-    _id: { type: Number, required: true },
-    firstName: { type: String, required: true },
-    lastName: { type: String },
-    username: { type: String },
-    isPremium: { type: Boolean },
-    languageCode: { type: String, required: true },
-    allowsWriteToPm: { type: Boolean, required: true },
-    referralCode: { type: String },
-  },
-  {
-    timestamps: true,
-  }
+	{
+		email: { type: String, required: true, unique: true, lowercase: true },
+		password: { type: String, required: true, select: false },
+		firstName: { type: String, required: true },
+		lastName: { type: String },
+		isVerified: { type: Boolean, default: false },
+		otp: { type: String },
+		otpExpiry: { type: Date },
+	},
+	{
+		timestamps: true,
+	},
 );
 
 // Create UserModel

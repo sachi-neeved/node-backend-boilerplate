@@ -1,15 +1,22 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",             // Use ES2020 or higher for modern Node.js environments
-    "module": "commonjs",           // CommonJS module system
-    "strict": true,                 // Enables strict type-checking
-    "esModuleInterop": true,        // Allow interoperability with ES6 modules
-    "skipLibCheck": true,           // Skip type-checking of declaration files for faster builds
-    "outDir": "./dist",             // Output directory for compiled files
-    "rootDir": "./",                // Source directory
-    "sourceMap": true,              // Generate source maps for easier debugging
-    "noEmitOnError": true           // Prevent emitting files if there are errors
-  },
-  "include": ["./**/*"], // Include all TypeScript files and HTML files in views
-  "exclude": ["node_modules", "dist"] // Exclude "node_modules" and "dist" from being compiled
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "commonjs",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"jsx": "react-jsx",
+		"outDir": "./dist",
+		"rootDir": "./",
+		"sourceMap": true,
+		"noEmitOnError": true,
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"ts-node": {
+		"files": true
+	},
+	"include": ["./**/*"],
+	"exclude": ["node_modules", "dist"]
 }

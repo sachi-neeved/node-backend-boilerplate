@@ -1,4 +1,5 @@
-import { Response } from "express";
+import type { Response } from "express";
+
 /**
  * Builds and sends a successful response.
  *
@@ -10,10 +11,10 @@ import { Response } from "express";
  * @returns {void} This function does not return a value. It directly sends the response back to the client.
  */
 const buildResponse = (res: Response, response: object = {}): void => {
-  res.send({
-    success: true,
-    response,
-  });
+	res.send({
+		success: true,
+		response,
+	});
 };
 
 export default buildResponse;

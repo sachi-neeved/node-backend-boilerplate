@@ -1,74 +1,62 @@
-import { validate, parse, type InitData } from "@telegram-apps/init-data-node";
-import { type RequestHandler, type Response } from "express";
-import { TELEGRAM_BOT_TOKEN } from "../constants";
-import buildError from "../utils/buildError";
+import type { RequestHandler, Response } from "express";
+import type { JwtSubject } from "../../@types";
+import { CookieName } from "../../config/cookie";
+import JWTServices from "../../services/jwtServices";
 import { handleError } from "../handlers/handleError";
+import buildError from "../utils/buildError";
 import { StatusCodes } from "../utils/statusCodes";
 
 /**
- * Sets init data in the specified Response object.
+ * Sets the authenticated user in the specified Response object.
  * @param res - Response object.
- * @param initData - init data.
+ * @param user - The JWT subject (authenticated user data).
  */
-function setInitData(res: Response, initData: InitData): void {
-  res.locals.initData = initData;
+function setUser(res: Response, user: JwtSubject): void {
+	res.locals.user = user;
 }
 
 /**
- * Extracts init data from the Response object.
+ * Extracts the authenticated user from the Response object.
  * @param res - Response object.
- * @returns Init data stored in the Response object. Can return undefined in case,
- * the client is not authorized.
+ * @returns The user stored in the Response object. Returns undefined if the client is not authorized.
  */
-export function getInitData(res: Response): InitData | undefined {
-  if (res.locals.initData && res.locals.initData?.user) {
-    return res.locals.initData;
-  }
-  buildError(
-    StatusCodes.NON_AUTHORITATIVE_INFORMATION,
-    "Invalid Telegram User"
-  );
-  return undefined;
+export function getUser(res: Response): JwtSubject | undefined {
+	if (res.locals.user?.id) {
+		return res.locals.user as JwtSubject;
+	}
+	buildError(StatusCodes.UNAUTHORIZED, "Unauthorized");
+	return undefined;
 }
 
 /**
- * Middleware which authorizes the external client.
+ * Middleware which authorizes the external client using a Bearer JWT token.
+ * Expects the Authorization header in the format: Bearer <token>
  * @param req - Request object.
  * @param res - Response object.
- * @param next - function to call the next middleware.
+ * @param next - Function to call the next middleware.
  */
 export const authMiddleware: RequestHandler = (req, res, next) => {
-  // We expect passing init data in the Authorization header in the following format:
-  // <auth-type> <auth-data>
-  // <auth-type> must be "tma", and <auth-data> is Telegram Mini Apps init data.
-  try {
-    const [authType, authData = ""] = (req.header("authorization") || "").split(
-      " "
-    );
+	try {
+		const authHeader = req.header("authorization") || "";
+		const [authType, headerToken = ""] = authHeader.split(" ");
+		const bearerToken = authType?.toLowerCase() === "bearer" ? headerToken : "";
+		const token =
+			bearerToken || (req.cookies?.[CookieName.AccessToken] as string | undefined) || "";
 
-    if (!authData || !authType) {
-      return buildError(401, "authType or authData not supplied");
-    }
+		if (!token) {
+			return next(
+				buildError(StatusCodes.UNAUTHORIZED, "You are not authorized to access this resource"),
+			);
+		}
 
-    switch (authType) {
-      case "tma":
-        try {
-          // Validate init data.
-          validate(authData, TELEGRAM_BOT_TOKEN, {
-            // We consider init data sign valid for 1 hour from their creation moment.
-            expiresIn: 3600,
-          });
+		const payload = JWTServices.verifyToken(token);
+		if (!payload?.sub) {
+			return next(buildError(StatusCodes.UNAUTHORIZED, "Invalid or expired token"));
+		}
 
-          // Parse init data. We will surely need it in the future.
-          setInitData(res, parse(authData));
-          return next();
-        } catch (e: any) {
-          return next(buildError(401, e.message));
-        }
-      default:
-        return next(buildError(404, "Unauthorized"));
-    }
-  } catch (error: any) {
-    handleError(res, error);
-  }
+		setUser(res, payload.sub);
+		return next();
+	} catch (error) {
+		handleError(res, error);
+	}
 };

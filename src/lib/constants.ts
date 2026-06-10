@@ -1,13 +1,7 @@
 import dotenv from "dotenv-safe";
+
 // Load environment variables
 dotenv.config();
-
-/**
- * Telegram Bot Token for bot authentication
- * @type {string}
- */
-export const TELEGRAM_BOT_TOKEN: string = process.env
-  .TELEGRAM_BOT_TOKEN as string;
 
 /**
  * JWT Secret Key for token-based authentication
@@ -58,13 +52,22 @@ export const APP_PORT: string = process.env.PORT as string;
 export const USE_REDIS: string = process.env.USE_REDIS as string;
 
 /**
- * API Version
- * @type {string}
- */
-export const API_VERSION: string = process.env.API_VERSION as string;
-
-/**
  * Allowed Origins
  * @type {string}
  */
 export const ALLOWED_ORIGINS: string = process.env.ALLOWED_ORIGINS as string;
+
+export const REFRESH_TOKEN_EXPIRY: number = Number.parseInt(
+	process.env.REFRESH_TOKEN_EXPIRY as string,
+	10,
+);
+export const ACCESS_TOKEN_EXPIRY: number = Number.parseInt(
+	process.env.ACCESS_TOKEN_EXPIRY as string,
+	10,
+);
+
+export const SMTP_HOST: string = process.env.SMTP_HOST as string;
+export const SMTP_PORT: string = process.env.SMTP_PORT as string;
+export const SMTP_USER: string = process.env.SMTP_USER as string;
+export const SMTP_PASS: string = process.env.SMTP_PASS as string;
+export const SMTP_FROM: string = process.env.SMTP_FROM as string;

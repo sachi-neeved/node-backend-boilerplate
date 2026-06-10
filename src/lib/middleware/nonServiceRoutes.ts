@@ -1,8 +1,12 @@
-import { Application, Request, Response, Router } from "express";
+import { render } from "@react-email/render";
+import { type Application, type Request, type Response, Router } from "express";
+import { createElement } from "react";
+import HomePage from "@/views/pages/HomePage";
+import NotFoundPage from "@/views/pages/NotFoundPage";
 import buildError from "../utils/buildError";
-import { StatusCodes } from "../utils/statusCodes";
-import isBrowser from "../utils/isBrowser";
 import buildResponse from "../utils/buildResponse";
+import isBrowser from "../utils/isBrowser";
+import { StatusCodes } from "../utils/statusCodes";
 
 const nonServiceRoutes = Router();
 
@@ -11,8 +15,8 @@ const nonServiceRoutes = Router();
  * @param req - The Express request object.
  * @param res - The Express response object.
  */
-nonServiceRoutes.get("/health", (req, res) => {
-  res.status(200).send("OK");
+nonServiceRoutes.get("/health", (_req, res) => {
+	res.status(200).send("OK");
 });
 
 /**
@@ -20,18 +24,17 @@ nonServiceRoutes.get("/health", (req, res) => {
  * @param req - The Express request object.
  * @param res - The Express response object.
  */
-nonServiceRoutes.get("/", (req: Request, res: Response) => {
-  const userAgent = req.get("User-Agent") || "";
-
-  if (isBrowser(userAgent)) {
-    // Serve static HTML directly
-    res.render("home.html"); // Adjust the path accordingly
-  } else {
-    buildResponse(res, {
-      server: "Backend Home",
-      message: "The backend services is connected and running!",
-    });
-  }
+nonServiceRoutes.get("/", async (req: Request, res: Response) => {
+	const userAgent = req.get("User-Agent") || "";
+	if (isBrowser(userAgent)) {
+		const html = `<!DOCTYPE html>${await render(createElement(HomePage))}`;
+		res.type("html").send(html);
+	} else {
+		buildResponse(res, {
+			server: "Backend Home",
+			message: "The backend service is connected and running!",
+		});
+	}
 });
 
 /**
@@ -39,18 +42,18 @@ nonServiceRoutes.get("/", (req: Request, res: Response) => {
  * @param req - The Express request object.
  * @param res - The Express response object.
  */
-nonServiceRoutes.use("*", (req, res) => {
-  const userAgent = req.get("User-Agent") || "";
-  if (isBrowser(userAgent)) {
-    // Serve static HTML directly
-    res.render("404.html"); // Adjust the path accordingly
-  } else {
-    buildError(StatusCodes.NOT_FOUND, "URL_NOT_FOUND");
-  }
+nonServiceRoutes.use("/{*path}", async (req, res) => {
+	const userAgent = req.get("User-Agent") || "";
+	if (isBrowser(userAgent)) {
+		const html = `<!DOCTYPE html>${await render(createElement(NotFoundPage))}`;
+		res.status(404).type("html").send(html);
+	} else {
+		buildError(StatusCodes.NOT_FOUND, "URL_NOT_FOUND");
+	}
 });
 
 const inItNonServiceRoutes = (app: Application) => {
-  app.use(nonServiceRoutes);
+	app.use(nonServiceRoutes);
 };
 
 export default inItNonServiceRoutes;

@@ -1,0 +1,5 @@
+#!/bin/sh
+node -e "require('dotenv-safe').config()"
+pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true $(git diff --cached --name-only --diff-filter=ACMR)
+git add $(git diff --cached --name-only --diff-filter=ACMR)
+pnpm cspell --no-progress --no-summary $(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(ts|js|json|md)$")

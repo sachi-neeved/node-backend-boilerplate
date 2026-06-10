@@ -1,71 +1,54 @@
-import { format, createLogger, transports, Logger } from "winston";
+import { createLogger, format, type Logger, transports } from "winston";
 import "winston-daily-rotate-file";
 
-const { timestamp, combine, errors, json, printf } = format;
-
 /**
- * Custom format for log messages.
- * This format includes the timestamp, log level, message, and any additional metadata.
- * If metadata is present, it is stringified and appended to the log message.
- *
- * @param {Object} info - Log information.
- * @param {string} info.level - Log level.
- * @param {string} info.message - Log message.
- * @param {string} info.timestamp - Log timestamp.
- * @param {Object} info.meta - Additional metadata.
- * @returns {string} Formatted log string.
+ * Shared JSON log format used across all production transports.
+ * Includes timestamp, error stack traces, and structured JSON output.
  */
-const customFormat = printf(({ level, message, timestamp, ...meta }) => {
-  const metaString = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
-  return `${timestamp} [${level}] ${message}${metaString}`;
-});
+const sharedFormat = format.combine(
+	format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+	format.errors({ stack: true }),
+	format.json(),
+);
 
 /**
- * Builds and returns a logger instance specifically configured for production environments.
- * This logger outputs logs to the console and to daily rotating log files.
- * The log files are stored in the 'logs' directory and are rotated daily.
- * There are separate log files for all logs and error logs.
- * Error logs also include stack traces.
+ * Builds and returns a logger instance configured for production environments.
+ * Outputs structured JSON logs to the console and to daily rotating log files.
+ * Separate files are maintained for all logs and error-only logs.
+ * Uncaught exceptions and unhandled rejections are written to dedicated files.
  *
  * @returns {Logger} A Winston logger instance.
  */
 const buildProdLogger = (): Logger => {
-  return createLogger({
-    format: combine(
-      timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-      errors({ stack: true }),
-      customFormat
-    ),
-    transports: [
-      new transports.Console(),
-      new transports.DailyRotateFile({
-        datePattern: "DD-MM-YYYY",
-        filename: "logs/all.log",
-        level: "info",
-        format: combine(
-          timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-          errors({ stack: true }),
-          customFormat
-        ),
-      }),
-      new transports.DailyRotateFile({
-        datePattern: "DD-MM-YYYY",
-        filename: "logs/errors.log",
-        level: "error",
-        format: combine(
-          timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-          errors({ stack: true }),
-          customFormat
-        ),
-      }),
-    ],
-    exceptionHandlers: [
-      new transports.File({ filename: "logs/exceptions.log" }),
-    ],
-    rejectionHandlers: [
-      new transports.File({ filename: "logs/rejections.log" }),
-    ],
-  });
+	return createLogger({
+		level: "info",
+		format: sharedFormat,
+		transports: [
+			new transports.Console(),
+			new transports.DailyRotateFile({
+				filename: "logs/%DATE%-all.log",
+				datePattern: "YYYY-MM-DD",
+				level: "info",
+				maxFiles: "14d",
+				maxSize: "20m",
+				zippedArchive: true,
+			}),
+			new transports.DailyRotateFile({
+				filename: "logs/%DATE%-errors.log",
+				datePattern: "YYYY-MM-DD",
+				level: "error",
+				maxFiles: "30d",
+				maxSize: "20m",
+				zippedArchive: true,
+			}),
+		],
+		exceptionHandlers: [
+			new transports.File({ filename: "logs/exceptions.log", format: sharedFormat }),
+		],
+		rejectionHandlers: [
+			new transports.File({ filename: "logs/rejections.log", format: sharedFormat }),
+		],
+	});
 };
 
 export default buildProdLogger;

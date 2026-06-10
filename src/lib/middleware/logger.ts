@@ -1,48 +1,62 @@
-import { Application, NextFunction, Request, Response } from "express";
+import type { Application, NextFunction, Request, Response } from "express";
 import logger from "../logger";
 
+/** Keys whose values are replaced with [REDACTED] before logging. */
+const SENSITIVE_KEYS = new Set([
+	"password",
+	"confirmPassword",
+	"token",
+	"accessToken",
+	"refreshToken",
+	"otp",
+]);
+
 /**
- * Initializes the logger middleware for the Express application.
- * This middleware logs incoming requests and their details, including method, endpoint, query, params, and body.
- * It also profiles the request duration and logs the response status code.
+ * Returns a shallow copy of `body` with sensitive field values replaced by `[REDACTED]`.
+ *
+ * @param body - The request body object to sanitize.
+ * @returns Sanitized copy of the body.
+ */
+function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
+	return Object.fromEntries(
+		Object.entries(body).map(([k, v]) => [k, SENSITIVE_KEYS.has(k) ? "[REDACTED]" : v]),
+	);
+}
+
+/**
+ * Initializes the request logger middleware for the Express application.
+ * Logs each completed request with method, URL, status code, duration, and sanitized body.
+ * Log level is derived from the response status code: info (2xx/3xx), warn (4xx), error (5xx).
+ *
  * @param app - The Express application.
  */
 const inItLogger = (app: Application) => {
-  /**
-   * Middleware function to log request details and profile request duration.
-   * @param req - The Express request object.
-   * @param res - The Express response object.
-   * @param next - The next middleware function in the Express application.
-   */
-  const requestLogger = (req: Request, res: Response, next: NextFunction) => {
-    // Log request details
-    const requestInfo = {
-      method: req.method,
-      endpoint: req.originalUrl,
-      query: req.query,
-      params: req.params,
-      body: req.body,
-    };
+	/**
+	 * Middleware that records request duration and logs a single line on response finish.
+	 *
+	 * @param req - The Express request object.
+	 * @param res - The Express response object.
+	 * @param next - The next middleware function.
+	 */
+	const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+		const start = Date.now();
 
-    // Start profiling the request
-    const profiler = logger?.startTimer();
+		res.once("finish", () => {
+			const durationMs = Date.now() - start;
+			const level = res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info";
 
-    // Log the incoming request
-    logger?.info(`Incoming RequestInfo ${JSON.stringify(requestInfo)}`);
+			logger[level](`${req.method} ${req.originalUrl} ${res.statusCode}`, {
+				durationMs,
+				query: req.query,
+				params: req.params,
+				body: sanitizeBody(req.body ?? {}),
+			});
+		});
 
-    // Add a listener for the 'finish' event, which is emitted when the response has been sent
-    res.once("finish", () => {
-      profiler?.done({
-        returnedStatusCode: res.statusCode,
-        requestInfo,
-        message: `Request to ${req.originalUrl} completed`, // Add a meaningful message
-      });
-    });
+		next();
+	};
 
-    // Continue with the request handling
-    next();
-  };
-  app.use(requestLogger);
+	app.use(requestLogger);
 };
 
 export default inItLogger;

@@ -7,6 +7,6 @@
  * @returns {boolean} True if the userAgent indicates a browser environment, false otherwise.
  */
 const isBrowser = (userAgent: string) => {
-  return /Mozilla|Chrome|Safari|Firefox/i.test(userAgent);
+	return /Mozilla|Chrome|Safari|Firefox/i.test(userAgent);
 };
 export default isBrowser;

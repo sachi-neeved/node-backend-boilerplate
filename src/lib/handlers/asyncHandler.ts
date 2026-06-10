@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, RequestHandler } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 /**
  * A utility function to handle asynchronous operations in Express routes.
@@ -17,13 +17,11 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
  * errors that might occur by passing them to the next middleware function.
  */
 const asyncHandler =
-  (
-    fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
-  ): RequestHandler =>
-  (req: Request, res: Response, next: NextFunction) => {
-    // Wrap the original function in a Promise to handle any errors that might occur.
-    // If an error occurs, it will be caught and passed to the next middleware function.
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
+	(fn: (req: Request, res: Response, next: NextFunction) => Promise<void>): RequestHandler =>
+	(req: Request, res: Response, next: NextFunction) => {
+		// Wrap the original function in a Promise to handle any errors that might occur.
+		// If an error occurs, it will be caught and passed to the next middleware function.
+		Promise.resolve(fn(req, res, next)).catch(next);
+	};
 
 export default asyncHandler;

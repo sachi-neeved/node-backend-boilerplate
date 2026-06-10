@@ -1,0 +1,30 @@
+{
+	"version": "0.2",
+	"language": "en",
+	"files": ["src/**/*.ts"],
+	"ignorePaths": ["node_modules", "dist", "pnpm-lock.yaml"],
+	"words": [
+		"dotenv",
+		"cors",
+		"dayjs",
+		"nodemon",
+		"mongoose",
+		"mongodb",
+		"pnpm",
+		"biome",
+		"husky",
+		"jsonwebtoken",
+		"cspell",
+		"winston",
+		"expeditious",
+		"redis",
+		"middlewares",
+		"referral",
+		"healthcheck",
+		"miniapp",
+		"expresscache",
+		"Sachidanand",
+		"asteasolutions"
+	],
+	"dictionaries": ["typescript", "node", "npm"]
+}
