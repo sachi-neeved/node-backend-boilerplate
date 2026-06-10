@@ -1,11 +1,22 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
+const RoleSchema = z.object({
+	_id: z.string().openapi({ example: "64b8f1a2c3d4e5f6a7b8c9d1" }),
+	name: z.enum(["client", "lawyer", "admin"]).openapi({ example: "client" }),
+	displayName: z.string().openapi({ example: "Client" }),
+	permissions: z.array(z.string()).openapi({ example: ["cases:read", "documents:read"] }),
+});
+
 const UserResponseSchema = z.object({
 	_id: z.string().openapi({ example: "64b8f1a2c3d4e5f6a7b8c9d0" }),
 	email: z.email().openapi({ example: "user@example.com" }),
 	firstName: z.string().openapi({ example: "John" }),
 	lastName: z.string().optional().openapi({ example: "Doe" }),
+	phone: z.string().optional().openapi({ example: "+91 98765 43210" }),
+	roleId: RoleSchema,
+	isVerified: z.boolean().openapi({ example: true }),
+	isActive: z.boolean().openapi({ example: true }),
 	createdAt: z.string().openapi({ example: "2024-01-01T00:00:00.000Z" }),
 	updatedAt: z.string().openapi({ example: "2024-01-01T00:00:00.000Z" }),
 });

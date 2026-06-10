@@ -1,6 +1,7 @@
 import type { RequestHandler, Response } from "express";
 import type { JwtSubject } from "../../@types";
 import { CookieName } from "../../config/cookie";
+import type { RoleName } from "../../models/Role";
 import JWTServices from "../../services/jwtServices";
 import { handleError } from "../handlers/handleError";
 import buildError from "../utils/buildError";
@@ -27,6 +28,22 @@ export function getUser(res: Response): JwtSubject | undefined {
 	buildError(StatusCodes.UNAUTHORIZED, "Unauthorized");
 	return undefined;
 }
+
+/**
+ * Middleware factory that restricts access to users with the specified roles.
+ * Must be used after authMiddleware so that res.locals.user is populated.
+ */
+export const requireRole =
+	(...roles: RoleName[]): RequestHandler =>
+	(_, res, next) => {
+		const user = res.locals.user as JwtSubject | undefined;
+		if (!user?.role || !(roles as string[]).includes(user.role)) {
+			return next(
+				buildError(StatusCodes.FORBIDDEN, "You do not have permission to access this resource"),
+			);
+		}
+		return next();
+	};
 
 /**
  * Middleware which authorizes the external client using a Bearer JWT token.

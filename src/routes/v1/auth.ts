@@ -23,6 +23,8 @@ class AuthRouter extends ControllerManager {
 		this.router.post("/verify-otp", validate(VerifyOtpSchema), super.authController.verifyOtp);
 		this.router.post("/resend-otp", validate(ResendOtpSchema), super.authController.resendOtp);
 		this.router.post("/login", validate(LoginSchema), super.authController.login);
+		this.router.post("/refresh", super.authController.refresh);
+		this.router.post("/logout", authMiddleware, super.authController.logout);
 		this.router.get("/me", authMiddleware, super.authController.getProfile);
 	}
 }

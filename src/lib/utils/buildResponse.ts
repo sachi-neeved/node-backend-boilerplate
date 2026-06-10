@@ -10,8 +10,8 @@ import type { Response } from "express";
  * @param {Object} [response={}] - The response data to be sent back to the client. Defaults to an empty object if not provided.
  * @returns {void} This function does not return a value. It directly sends the response back to the client.
  */
-const buildResponse = (res: Response, response: object = {}): void => {
-	res.send({
+const buildResponse = (res: Response, response: object = {}, statusCode = 200): void => {
+	res.status(statusCode).send({
 		success: true,
 		response,
 	});

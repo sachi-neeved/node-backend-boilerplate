@@ -7,21 +7,31 @@ import {
 	VerifyOtpSchema,
 } from "../../../validators/user.schema";
 
+const RoleSchema = z.object({
+	_id: z.string().openapi({ example: "64b8f1a2c3d4e5f6a7b8c9d1" }),
+	name: z.enum(["client", "lawyer", "admin"]).openapi({ example: "client" }),
+	displayName: z.string().openapi({ example: "Client" }),
+	permissions: z.array(z.string()).openapi({ example: ["cases:read", "documents:read"] }),
+});
+
 const UserResponseSchema = z.object({
 	_id: z.string().openapi({ example: "64b8f1a2c3d4e5f6a7b8c9d0" }),
 	email: z.email().openapi({ example: "user@example.com" }),
 	firstName: z.string().openapi({ example: "John" }),
 	lastName: z.string().optional().openapi({ example: "Doe" }),
+	phone: z.string().optional().openapi({ example: "+91 98765 43210" }),
+	roleId: RoleSchema,
+	isVerified: z.boolean().openapi({ example: true }),
+	isActive: z.boolean().openapi({ example: true }),
 	createdAt: z.string().openapi({ example: "2024-01-01T00:00:00.000Z" }),
 	updatedAt: z.string().openapi({ example: "2024-01-01T00:00:00.000Z" }),
 });
 
-const MessageResponseSchema = z.object({
-	success: z.boolean().openapi({ example: true }),
-	response: z.object({
-		message: z.string().openapi({ example: "Verification code sent to your email" }),
-	}),
-});
+const messageResponse = (example: string) =>
+	z.object({
+		success: z.boolean().openapi({ example: true }),
+		response: z.object({ message: z.string().openapi({ example }) }),
+	});
 
 const UserResponseWrappedSchema = z.object({
 	success: z.boolean().openapi({ example: true }),
@@ -49,7 +59,9 @@ export default function registerPaths(registry: OpenAPIRegistry) {
 		responses: {
 			200: {
 				description: "OTP sent to email",
-				content: { "application/json": { schema: MessageResponseSchema } },
+				content: {
+					"application/json": { schema: messageResponse("Verification code sent to your email") },
+				},
 			},
 			400: {
 				description: "Validation error",
@@ -103,7 +115,9 @@ export default function registerPaths(registry: OpenAPIRegistry) {
 		responses: {
 			200: {
 				description: "OTP resent successfully",
-				content: { "application/json": { schema: MessageResponseSchema } },
+				content: {
+					"application/json": { schema: messageResponse("Verification code resent to your email") },
+				},
 			},
 			400: {
 				description: "Validation error",
@@ -170,6 +184,43 @@ export default function registerPaths(registry: OpenAPIRegistry) {
 			},
 			404: {
 				description: "User not found",
+				content: { "application/json": { schema: ErrorResponseSchema } },
+			},
+		},
+	});
+
+	registry.registerPath({
+		method: "post",
+		path: "/auth/refresh",
+		tags: ["Auth"],
+		summary: "Refresh access token",
+		description: "Uses the `refreshToken` HTTP-only cookie to issue a new `accessToken` cookie.",
+		responses: {
+			200: {
+				description: "Access token refreshed",
+				content: { "application/json": { schema: messageResponse("Token refreshed") } },
+			},
+			401: {
+				description: "Missing or invalid refresh token",
+				content: { "application/json": { schema: ErrorResponseSchema } },
+			},
+		},
+	});
+
+	registry.registerPath({
+		method: "post",
+		path: "/auth/logout",
+		tags: ["Auth"],
+		summary: "Log out the current user",
+		description: "Clears `accessToken` and `refreshToken` cookies.",
+		security: [{ BearerAuth: [] }],
+		responses: {
+			200: {
+				description: "Logged out successfully",
+				content: { "application/json": { schema: messageResponse("Logged out successfully") } },
+			},
+			401: {
+				description: "Not authenticated",
 				content: { "application/json": { schema: ErrorResponseSchema } },
 			},
 		},

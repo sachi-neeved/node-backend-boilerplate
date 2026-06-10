@@ -24,7 +24,12 @@
 		"miniapp",
 		"expresscache",
 		"Sachidanand",
-		"asteasolutions"
+		"asteasolutions",
+		"Paise",
+		"paise",
+		"Topup",
+		"topup",
+		"TOPUP"
 	],
 	"dictionaries": ["typescript", "node", "npm"]
 }
