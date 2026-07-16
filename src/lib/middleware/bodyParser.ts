@@ -8,9 +8,9 @@ import { type Application, json, urlencoded } from "express";
  */
 const inItBodyParser = (app: Application) => {
 	// to parse URL-encoded bodies
-	app.use(urlencoded({ extended: true }));
+	app.use(urlencoded({ extended: true, limit: "1mb" }));
 	// to parse JSON bodies
-	app.use(json());
+	app.use(json({ limit: "1mb" }));
 	// to parse cookies
 	app.use(cookieParser());
 };

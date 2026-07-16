@@ -1,7 +1,8 @@
 import type { RequestHandler, Response } from "express";
-import type { JwtSubject } from "../../@types";
+import type { JwtSubject } from "@/types";
 import { CookieName } from "../../config/cookie";
 import JWTServices from "../../services/jwtServices";
+import { type Actions, defineAbilityForRole, type Subjects } from "../casl/ability";
 import { handleError } from "../handlers/handleError";
 import buildError from "../utils/buildError";
 import { StatusCodes } from "../utils/statusCodes";
@@ -27,6 +28,28 @@ export function getUser(res: Response): JwtSubject | undefined {
 	buildError(StatusCodes.UNAUTHORIZED, "Unauthorized");
 	return undefined;
 }
+
+/**
+ * Middleware factory that checks a CASL permission against the authenticated user.
+ * Must be used after authMiddleware so that res.locals.user is populated.
+ */
+export const requirePermission =
+	(action: Actions, subject: Subjects): RequestHandler =>
+	(_req, res, next) => {
+		const user = res.locals.user as JwtSubject | undefined;
+		if (!user?.role) {
+			return next(
+				buildError(StatusCodes.FORBIDDEN, "You do not have permission to access this resource"),
+			);
+		}
+		const ability = defineAbilityForRole(user.role, user.permissions ?? []);
+		if (!ability.can(action, subject)) {
+			return next(
+				buildError(StatusCodes.FORBIDDEN, "You do not have permission to access this resource"),
+			);
+		}
+		return next();
+	};
 
 /**
  * Middleware which authorizes the external client using a Bearer JWT token.

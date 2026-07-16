@@ -24,7 +24,12 @@
 		"miniapp",
 		"expresscache",
 		"Sachidanand",
-		"asteasolutions"
+		"asteasolutions",
+		"Neev",
+		"virtuals",
+		"upsert",
+		"upserts",
+		"upserted"
 	],
 	"dictionaries": ["typescript", "node", "npm"]
 }

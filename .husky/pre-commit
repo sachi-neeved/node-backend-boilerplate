@@ -3,3 +3,7 @@ node -e "require('dotenv-safe').config()"
 pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true $(git diff --cached --name-only --diff-filter=ACMR)
 git add $(git diff --cached --name-only --diff-filter=ACMR)
 pnpm cspell --no-progress --no-summary $(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(ts|js|json|md)$")
+
+# Coverage is project-wide (not just staged files) and runs unit + e2e last,
+# since it's the slowest check — no point paying for it if the fast checks above already failed.
+pnpm test:coverage

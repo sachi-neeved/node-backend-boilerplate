@@ -5,12 +5,14 @@ import { getUser } from "../lib/middleware/auth";
 import buildError from "../lib/utils/buildError";
 import buildResponse from "../lib/utils/buildResponse";
 import { StatusCodes } from "../lib/utils/statusCodes";
-import ServiceManager from "../services";
+import AuthService from "../services/authServices";
 
 /**
- * UserController is a class that extends ServiceManager and is responsible for handling user-related operations.
+ * UserController handles user-related operations, backed by an injected AuthService.
  */
-class UserController extends ServiceManager {
+class UserController {
+	constructor(private readonly authServices: AuthService = new AuthService()) {}
+
 	/**
 	 * @desc    Get the currently authenticated user
 	 * @route   GET /user

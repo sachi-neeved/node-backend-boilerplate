@@ -1,16 +1,35 @@
 import mongoose from "mongoose";
-import { APP_PORT, MONGO_URI, NODE_ENV } from "../lib/constants";
+import {
+	APP_PORT,
+	DB_MAX_POOL_SIZE,
+	DB_MIN_POOL_SIZE,
+	MONGO_URI,
+	NODE_ENV,
+} from "../lib/constants";
 import logger from "../lib/logger";
 import tryCatch from "../lib/utils/tryCatch";
+import { DEFAULT_ROLES, RoleModel } from "../models/Role";
+
+/** Upserts each system role so it always exists without clobbering any existing document. */
+const seedRoles = async () => {
+	await Promise.all(
+		DEFAULT_ROLES.map((role) =>
+			RoleModel.findOneAndUpdate({ name: role.name }, { $setOnInsert: role }, { upsert: true }),
+		),
+	);
+};
 
 /**
- * Establishes a connection to the MongoDB database.
- *
- * This function attempts to connect to the MongoDB database using the URI defined in the environment variables.
- * If the connection is successful, it logs a success message to the console. If the connection fails, it logs the error message and exits the process.
+ * Initializes the MongoDB connection using the URI and pool settings defined in config.
  */
-const connectDB = async () => {
-	const [, err] = await tryCatch(() => mongoose.connect(MONGO_URI));
+const inItDb = async () => {
+	const [, err] = await tryCatch(() =>
+		mongoose.connect(MONGO_URI, {
+			maxPoolSize: DB_MAX_POOL_SIZE,
+			minPoolSize: DB_MIN_POOL_SIZE,
+			serverSelectionTimeoutMS: 5000,
+		}),
+	);
 
 	if (err) {
 		logger?.error(`Database connection failed: ${err}`);
@@ -22,6 +41,8 @@ const connectDB = async () => {
 	logger?.info(`NODE_ENV: ${NODE_ENV}`);
 	logger?.info("Database Status: Connected!");
 
+	await seedRoles();
+
 	mongoose.connection.on("error", (connErr: Error) => {
 		logger?.error(`Database error: ${connErr.message}`);
 	});
@@ -31,4 +52,4 @@ const connectDB = async () => {
 	});
 };
 
-export default connectDB;
+export default inItDb;

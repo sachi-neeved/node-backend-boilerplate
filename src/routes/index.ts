@@ -1,20 +1,13 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { Application } from "express";
+import v1Router from "./v1";
+import v2Router from "./v2";
 
+// Static imports instead of a runtime fs.readdirSync + require() scan — the dynamic
+// version resolved fine under ts-node but not under Vite/Vitest's module loader (or
+// any other bundler), since it can't statically analyze a runtime-computed require path.
 const inItRouters = (app: Application) => {
-	// Node.js environment: Use fs and path
-	const routersPath = path.resolve(__dirname);
-	const versionedFolders = fs.readdirSync(routersPath).filter((folder) => {
-		const folderPath = path.join(routersPath, folder);
-		return fs.statSync(folderPath).isDirectory(); // Check if it's a directory
-	});
-
-	versionedFolders.forEach((folder) => {
-		const routerPath = path.join(routersPath, folder);
-		const router = require(routerPath).default;
-		app.use(`/api/${folder}`, router);
-	});
+	app.use("/api/v1", v1Router);
+	app.use("/api/v2", v2Router);
 };
 
 export default inItRouters;

@@ -4,10 +4,11 @@ import { generateV1Doc, generateV2Doc } from "../swagger";
 
 /**
  * Mounts Swagger UI at /api-docs with a v1/v2 version dropdown.
- * Only active in non-production environments.
+ * Only active in development — skipped in production and in test runs, where its
+ * dynamic `require()` of the path modules doesn't resolve under Vitest's loader.
  */
 const initSwagger = (app: Application): void => {
-	if (process.env.NODE_ENV === "production") return;
+	if (process.env.NODE_ENV !== "development") return;
 
 	const v1Spec = generateV1Doc();
 	const v2Spec = generateV2Doc();

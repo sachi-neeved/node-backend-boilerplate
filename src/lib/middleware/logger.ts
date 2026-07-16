@@ -1,4 +1,5 @@
 import type { Application, NextFunction, Request, Response } from "express";
+import { NODE_ENV } from "../constants";
 import logger from "../logger";
 
 /** Keys whose values are replaced with [REDACTED] before logging. */
@@ -23,6 +24,13 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
 	);
 }
 
+/** Maps a response status code to a winston log level: error (5xx), warn (4xx), info (else). */
+function getLogLevel(statusCode: number): "error" | "warn" | "info" {
+	if (statusCode >= 500) return "error";
+	if (statusCode >= 400) return "warn";
+	return "info";
+}
+
 /**
  * Initializes the request logger middleware for the Express application.
  * Logs each completed request with method, URL, status code, duration, and sanitized body.
@@ -43,13 +51,18 @@ const inItLogger = (app: Application) => {
 
 		res.once("finish", () => {
 			const durationMs = Date.now() - start;
-			const level = res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info";
+			const level = getLogLevel(res.statusCode);
+			// Skip the request-detail dump for successful production requests — it's pure
+			// per-request serialization cost with no diagnostic value once things are working.
+			const includeDetails = level !== "info" || NODE_ENV !== "production";
 
 			logger[level](`${req.method} ${req.originalUrl} ${res.statusCode}`, {
 				durationMs,
-				query: req.query,
-				params: req.params,
-				body: sanitizeBody(req.body ?? {}),
+				...(includeDetails && {
+					query: req.query,
+					params: req.params,
+					body: sanitizeBody(req.body ?? {}),
+				}),
 			});
 		});
 

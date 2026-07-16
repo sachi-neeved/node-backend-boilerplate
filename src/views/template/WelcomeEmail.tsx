@@ -1,6 +1,3 @@
-export { render } from "@react-email/render";
-export { createElement as reactEmailCreateReactElement } from "react";
-
 import {
 	Body,
 	Button,
@@ -42,12 +39,12 @@ export default function WelcomeEmail({ firstName }: WelcomeEmailProps) {
 	return (
 		<Html lang="en">
 			<Head />
-			<Preview>Welcome to Court Record — your account is ready, {firstName}!</Preview>
+			<Preview>Welcome to NodeJS Boilerplate — your account is ready, {firstName}!</Preview>
 			<Body style={styles.body}>
 				<Container style={styles.container}>
 					{/* ── Header ── */}
 					<Section style={styles.header}>
-						<Text style={styles.brand}>⚖️ Court Record</Text>
+						<Text style={styles.brand}>⚖️ NodeJS Boilerplate</Text>
 						<Text style={styles.tagline}>Secure Legal Record Management</Text>
 					</Section>
 
@@ -56,8 +53,8 @@ export default function WelcomeEmail({ firstName }: WelcomeEmailProps) {
 						<Text style={styles.hero_icon}>🎉</Text>
 						<Heading style={styles.hero_heading}>Welcome, {firstName}!</Heading>
 						<Text style={styles.hero_sub}>
-							Your Court Record account is all set. You now have secure access to a modern legal
-							record management platform built for clarity, compliance, and trust.
+							Your NodeJS Boilerplate account is all set. You now have secure access to a modern
+							legal record management platform built for clarity, compliance, and trust.
 						</Text>
 					</Section>
 
@@ -98,7 +95,7 @@ export default function WelcomeEmail({ firstName }: WelcomeEmailProps) {
 					{/* ── Footer ── */}
 					<Section style={styles.footer}>
 						<Text style={styles.footer_copy}>
-							© {new Date().getFullYear()} Court Record &nbsp;·&nbsp; All rights reserved
+							© {new Date().getFullYear()} NodeJS Boilerplate &nbsp;·&nbsp; All rights reserved
 						</Text>
 						<Text style={styles.footer_links}>
 							Privacy Policy &nbsp;·&nbsp; Terms of Service &nbsp;·&nbsp; Support

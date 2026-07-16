@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loadRoutes } from "../../lib/utils/routeUtils";
+import usersRouter from "./users";
 
 /**
  * This module sets up the main router for the application.
@@ -7,10 +7,6 @@ import { loadRoutes } from "../../lib/utils/routeUtils";
  */
 const v2Router = Router();
 
-/**
- * Initialize routes from the routes directory.
- */
-const routesPath = __dirname; // Get the current directory
-loadRoutes(v2Router, routesPath); // Load and mount routes
+v2Router.use("/users", usersRouter);
 
 export default v2Router;

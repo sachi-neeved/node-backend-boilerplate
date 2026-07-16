@@ -6,11 +6,16 @@ import type { Types } from "mongoose";
  * @property {string} id - The unique identifier of the subject (MongoDB ObjectId as string).
  * @property {string} email - The email address of the subject.
  * @property {string} firstName - The first name of the subject.
+ * @property {string} role - The name of the subject's role.
+ * @property {string[]} permissions - "action:subject" permission strings (only meaningful
+ *   for custom roles — system roles' abilities are hardcoded, see lib/casl/ability.ts).
  */
 export interface JwtSubject {
 	id: Types.ObjectId;
 	email: string;
 	firstName: string;
+	role: string;
+	permissions: string[];
 }
 
 /**

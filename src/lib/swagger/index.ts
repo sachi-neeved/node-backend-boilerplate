@@ -1,34 +1,24 @@
-import fs from "node:fs";
-import path from "node:path";
-import { type OpenAPIRegistry, OpenApiGeneratorV31 } from "@asteasolutions/zod-to-openapi";
+import { OpenApiGeneratorV31 } from "@asteasolutions/zod-to-openapi";
+// Must load before the paths/*.ts imports below: registry.ts calls extendZodWithOpenApi(z),
+// which patches Zod's prototype with `.openapi()` — the paths files call that at module-load
+// time, so this import's side effect has to run first. Keep this line first even though it's
+// alphabetically after "./paths/..." — organizeImports is disabled for this file in
+// biome.json's overrides specifically so an auto-fix can't reorder it and break this.
 import { v1Registry, v2Registry } from "./registry";
+import registerV1AuthPaths from "./paths/v1/auth.paths";
+import registerV1UsersPaths from "./paths/v1/users.paths";
+import registerV2UsersPaths from "./paths/v2/users.paths";
 
-type PathsModule = (registry: OpenAPIRegistry) => void;
-type VersionedRegistries = Record<string, OpenAPIRegistry>;
-
-const registries: VersionedRegistries = { v1: v1Registry, v2: v2Registry };
-const pathsDir = path.resolve(__dirname, "paths");
-
-fs.readdirSync(pathsDir)
-	.filter((entry) => {
-		const fullPath = path.join(pathsDir, entry);
-		return fs.statSync(fullPath).isDirectory() && registries[entry];
-	})
-	.forEach((version) => {
-		const registry = registries[version];
-		const versionDir = path.join(pathsDir, version);
-
-		fs.readdirSync(versionDir)
-			.filter((f) => /\.(ts|js)$/.test(f))
-			.forEach((file) => {
-				const register = require(path.join(versionDir, file)).default as PathsModule;
-				register(registry);
-			});
-	});
+// Static imports instead of a runtime fs.readdirSync + require() scan — the dynamic
+// version resolved fine under ts-node but not under Vite/Vitest's module loader (or
+// any other bundler), since it can't statically analyze a runtime-computed require path.
+registerV1AuthPaths(v1Registry);
+registerV1UsersPaths(v1Registry);
+registerV2UsersPaths(v2Registry);
 
 const baseInfo = {
-	title: "Court Record API",
-	description: "REST API for the Court Record backend",
+	title: "NodeJS Boilerplate API",
+	description: "REST API for the NodeJS Boilerplate backend",
 };
 
 export function generateV1Doc() {
