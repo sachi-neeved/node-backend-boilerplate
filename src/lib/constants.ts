@@ -28,6 +28,15 @@ export const DOMAIN: string = process.env.DOMAIN as string;
 export const MONGO_URI: string = process.env.MONGO_URI as string;
 
 /**
+ * Max/min MongoDB connection pool size — optional, defaults to 20/2 when unset.
+ * @type {number}
+ */
+export const DB_MAX_POOL_SIZE: number =
+	Number.parseInt(process.env.DB_MAX_POOL_SIZE as string, 10) || 20;
+export const DB_MIN_POOL_SIZE: number =
+	Number.parseInt(process.env.DB_MIN_POOL_SIZE as string, 10) || 2;
+
+/**
  * Redis Host for establishing a connection to the Redis server
  * @type {string}
  */

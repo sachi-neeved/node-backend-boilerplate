@@ -1,6 +1,3 @@
-export { render } from "@react-email/render";
-export { createElement as reactEmailCreateReactElement } from "react";
-
 export default function NotFoundPage() {
 	return (
 		<html lang="en">

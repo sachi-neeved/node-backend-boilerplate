@@ -24,7 +24,9 @@
 		"miniapp",
 		"expresscache",
 		"Sachidanand",
-		"asteasolutions"
+		"asteasolutions",
+		"Neev",
+		"virtuals"
 	],
 	"dictionaries": ["typescript", "node", "npm"]
 }

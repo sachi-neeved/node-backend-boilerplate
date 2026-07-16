@@ -1,8 +1,7 @@
 import { createLogger, format, type Logger, transports } from "winston";
-import "winston-daily-rotate-file";
 
 /**
- * Shared JSON log format used across all production transports.
+ * Shared JSON log format used for production output.
  * Includes timestamp, error stack traces, and structured JSON output.
  */
 const sharedFormat = format.combine(
@@ -13,9 +12,9 @@ const sharedFormat = format.combine(
 
 /**
  * Builds and returns a logger instance configured for production environments.
- * Outputs structured JSON logs to the console and to daily rotating log files.
- * Separate files are maintained for all logs and error-only logs.
- * Uncaught exceptions and unhandled rejections are written to dedicated files.
+ * Outputs structured JSON logs to the console only — no local log files. Production
+ * runs are expected to ship console output to whatever log aggregator sits in front of
+ * them; writing to a local `logs/` folder is a dev-only convenience (see devLogger.ts).
  *
  * @returns {Logger} A Winston logger instance.
  */
@@ -23,31 +22,9 @@ const buildProdLogger = (): Logger => {
 	return createLogger({
 		level: "info",
 		format: sharedFormat,
-		transports: [
-			new transports.Console(),
-			new transports.DailyRotateFile({
-				filename: "logs/%DATE%-all.log",
-				datePattern: "YYYY-MM-DD",
-				level: "info",
-				maxFiles: "14d",
-				maxSize: "20m",
-				zippedArchive: true,
-			}),
-			new transports.DailyRotateFile({
-				filename: "logs/%DATE%-errors.log",
-				datePattern: "YYYY-MM-DD",
-				level: "error",
-				maxFiles: "30d",
-				maxSize: "20m",
-				zippedArchive: true,
-			}),
-		],
-		exceptionHandlers: [
-			new transports.File({ filename: "logs/exceptions.log", format: sharedFormat }),
-		],
-		rejectionHandlers: [
-			new transports.File({ filename: "logs/rejections.log", format: sharedFormat }),
-		],
+		transports: [new transports.Console()],
+		exceptionHandlers: [new transports.Console()],
+		rejectionHandlers: [new transports.Console()],
 	});
 };
 

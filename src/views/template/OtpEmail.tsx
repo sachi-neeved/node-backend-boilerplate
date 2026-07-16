@@ -1,6 +1,3 @@
-export { render } from "@react-email/render";
-export { createElement as reactEmailCreateReactElement } from "react";
-
 import {
 	Body,
 	Container,

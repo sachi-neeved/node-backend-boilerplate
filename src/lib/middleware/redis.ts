@@ -1,7 +1,12 @@
-import type { Application } from "express";
+import type { Application, NextFunction, Request, Response } from "express";
 import getExpeditiousCache from "express-expeditious";
+import { CookieName } from "../../config/cookie";
 import { REDIS_HOST, REDIS_PORT, USE_REDIS } from "../constants";
 import logger from "../logger";
+
+/** True if the request is authenticated — these responses must never be cached by URL alone. */
+const isAuthenticatedRequest = (req: Request): boolean =>
+	Boolean(req.cookies?.[CookieName.AccessToken] || req.headers.authorization);
 
 /**
  * Initializes Redis caching middleware for the Express application.
@@ -28,7 +33,12 @@ const inItRedis = (app: Application): undefined | null => {
 
 			// If cache is initialized successfully, use it in the Express app
 			if (cache) {
-				app.use(cache);
+				// Never let expeditious cache authenticated requests — it keys purely by
+				// URL/method, so caching e.g. GET /auth/me would serve one user's response
+				// to any other user hitting the same URL within the TTL window.
+				app.use((req: Request, res: Response, next: NextFunction) =>
+					isAuthenticatedRequest(req) ? next() : cache(req, res, next),
+				);
 				logger?.info("Redis Caching: Enabled");
 			} else {
 				logger?.error("Failed to initialize caching.");

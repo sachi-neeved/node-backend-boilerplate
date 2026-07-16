@@ -1,6 +1,7 @@
+import { randomInt } from "node:crypto";
 import type { Types } from "mongoose";
 import buildError from "@/lib/utils/buildError";
-import RepositoryManager from "@/repositories";
+import UserRepository from "@/repositories/userRepository";
 import type { JwtPayload, JwtSubject } from "../@types";
 import { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY } from "../lib/constants";
 import UserMessages from "../lib/messages/user";
@@ -9,14 +10,17 @@ import { StatusCodes } from "../lib/utils/statusCodes";
 import type { UserDocument } from "../models";
 import JWTServices from "./jwtServices";
 
+/** Uses crypto.randomInt (not Math.random()) — an OTP is a security control, not just a display value. */
 function generateOtp(): string {
-	return Math.floor(100000 + Math.random() * 900000).toString();
+	return randomInt(100_000, 1_000_000).toString();
 }
 
 /**
- * AuthService extends RepositoryManager to provide authentication-related services.
+ * AuthService provides authentication-related operations, backed by an injected UserRepository.
  */
-class AuthService extends RepositoryManager {
+class AuthService {
+	constructor(private readonly userRepository: UserRepository = new UserRepository()) {}
+
 	/**
 	 * Registers a new user with email and password.
 	 *
@@ -44,7 +48,6 @@ class AuthService extends RepositoryManager {
 			user = (await this.userRepository.findOneAndUpdate(
 				{ email: existing.email },
 				{ otp: otpHash, otpExpiry },
-				{ new: true },
 			)) as UserDocument;
 		} else {
 			const hashed = await hashPassword(password);
@@ -106,7 +109,6 @@ class AuthService extends RepositoryManager {
 		const updated = (await this.userRepository.findOneAndUpdate(
 			{ email: user.email },
 			{ otp: otpHash, otpExpiry },
-			{ new: true },
 		)) as UserDocument;
 
 		return { user: updated, otp };
@@ -132,7 +134,6 @@ class AuthService extends RepositoryManager {
 		return (await this.userRepository.findOneAndUpdate(
 			{ email: user.email },
 			{ isVerified: true, $unset: { otp: 1, otpExpiry: 1 } },
-			{ new: true },
 		)) as UserDocument;
 	}
 

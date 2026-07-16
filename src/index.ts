@@ -6,11 +6,11 @@
  * @version 1.0.0
  */
 
-import dotenvSafe from "dotenv-safe";
 import express from "express";
-import connectDB from "./config/db";
+import inItDb from "./config/db";
 import { APP_PORT } from "./lib/constants";
 import inItBodyParser from "./lib/middleware/bodyParser";
+import inItCompression from "./lib/middleware/compression";
 import inItCors from "./lib/middleware/cors";
 import inItErrorHandler from "./lib/middleware/errorHandler";
 import inItLogger from "./lib/middleware/logger";
@@ -20,16 +20,11 @@ import initSwagger from "./lib/middleware/swagger";
 import inItRouters from "./routes";
 
 /**
- * Initializes the Express server, loads environment variables, connects to the database,
- * and sets up routes and middleware.
+ * Builds and wires up the Express application, without connecting to the database
+ * or starting the HTTP listener — lets tests (e.g. supertest) get a fully-configured
+ * app against a test database, with no real port bound.
  */
-const inItServer = () => {
-	// Load environment variables
-	dotenvSafe.config();
-
-	// Connect to the database
-	connectDB();
-
+export const createApp = () => {
 	const app = express();
 
 	// Initialize body parser middleware
@@ -37,6 +32,9 @@ const inItServer = () => {
 
 	// Initialize CORS middleware
 	inItCors(app);
+
+	// Initialize response compression middleware
+	inItCompression(app);
 
 	// Initialize Redis cache middleware
 	inItRedis(app);
@@ -55,6 +53,19 @@ const inItServer = () => {
 
 	// Initialize Custom Error handler middleware
 	inItErrorHandler(app);
+
+	return app;
+};
+
+/**
+ * Initializes the Express server, loads environment variables, connects to the database,
+ * and sets up routes and middleware.
+ */
+const inItServer = () => {
+	// Connect to the database
+	inItDb();
+
+	const app = createApp();
 
 	// Start the server
 	app.listen(APP_PORT);

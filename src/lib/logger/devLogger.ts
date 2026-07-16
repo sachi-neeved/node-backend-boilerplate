@@ -1,9 +1,10 @@
 import { createLogger, format, type Logger, transports } from "winston";
+import "winston-daily-rotate-file";
 
 const { combine, colorize, timestamp, errors, printf } = format;
 
 /**
- * Custom log format that includes timestamp, colorized level, message or stack trace, and metadata.
+ * Custom log format that includes timestamp, level, message or stack trace, and metadata.
  *
  * @param {Object} info - Log information.
  * @param {string} info.level - Log level.
@@ -17,24 +18,53 @@ const logFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
 	return `${timestamp} ${level}: ${stack ?? message}${metaStr}`;
 });
 
+const baseFormat = combine(
+	errors({ stack: true }), // must run first to extract stack from Error objects
+	timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+);
+
+/** Colorized console format — color codes only belong on a terminal, never in a log file. */
+const consoleFormat = combine(baseFormat, colorize({ all: true }), logFormat);
+const fileFormat = combine(baseFormat, logFormat);
+
 /**
  * Builds and returns a logger instance configured for development environments.
- * Outputs colorized logs to the console with timestamp, level, message/stack, and metadata.
+ * Outputs colorized logs to the console, and — dev-only, unlike production — also writes
+ * to a local `logs/` folder (daily rotating files, plus dedicated exception/rejection files)
+ * so a crash or an error a few requests back can still be found after the console scrolled by.
  *
  * @returns {Logger} A Winston logger instance.
  */
 const buildDevLogger = (): Logger => {
 	return createLogger({
 		level: "debug",
-		format: combine(
-			errors({ stack: true }), // must run first to extract stack from Error objects
-			timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-			colorize({ all: true }),
-			logFormat,
-		),
-		transports: [new transports.Console()], // Output logs to the console
-		exceptionHandlers: [new transports.Console()],
-		rejectionHandlers: [new transports.Console()],
+		format: fileFormat,
+		transports: [
+			new transports.Console({ format: consoleFormat }),
+			new transports.DailyRotateFile({
+				filename: "logs/%DATE%-all.log",
+				datePattern: "YYYY-MM-DD",
+				maxFiles: "14d",
+				maxSize: "20m",
+				zippedArchive: true,
+			}),
+			new transports.DailyRotateFile({
+				filename: "logs/%DATE%-errors.log",
+				datePattern: "YYYY-MM-DD",
+				level: "error",
+				maxFiles: "30d",
+				maxSize: "20m",
+				zippedArchive: true,
+			}),
+		],
+		exceptionHandlers: [
+			new transports.Console({ format: consoleFormat }),
+			new transports.File({ filename: "logs/exceptions.log", format: fileFormat }),
+		],
+		rejectionHandlers: [
+			new transports.Console({ format: consoleFormat }),
+			new transports.File({ filename: "logs/rejections.log", format: fileFormat }),
+		],
 	});
 };
 

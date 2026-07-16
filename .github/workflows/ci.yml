@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Fast, independent checks — no service setup, run in parallel with no `needs:`.
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: npx tsc --noEmit
+
+  format-lint-check:
+    name: Format/Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run biome ci
+        run: pnpm check:ci
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+          cache: pnpm
+      - name: Set up env
+        run: |
+          cp .env.example .env
+          sed -i 's/^DOMAIN=$/DOMAIN=localhost/' .env
+          sed -i 's/^ALLOWED_ORIGINS=$/ALLOWED_ORIGINS=http:\/\/localhost:8000/' .env
+          sed -i 's/^SMTP_USER=$/SMTP_USER=ci-test/' .env
+          sed -i 's/^SMTP_PASS=$/SMTP_PASS=ci-test/' .env
+      - run: pnpm install --frozen-lockfile
+      - name: Env config check
+        run: node -r ts-node/register -r tsconfig-paths/register -e "require('./src/lib/constants')"
+      - name: Run unit tests
+        run: pnpm test
+
+  # Slow job (real MongoDB startup + app boot) — only runs once the fast correctness
+  # checks above have already passed, so a broken build doesn't waste CI minutes here.
+  e2e-tests:
+    name: E2E Tests
+    needs: [type-check, format-lint-check, unit-tests]
+    runs-on: ubuntu-latest
+    env:
+      # Pin mongodb-memory-server's binary download dir explicitly so the cache step
+      # below targets a known path instead of guessing the tool's default.
+      MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.cache/mongodb-binaries
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+          cache: pnpm
+      - name: Set up env
+        run: |
+          cp .env.example .env
+          sed -i 's/^DOMAIN=$/DOMAIN=localhost/' .env
+          sed -i 's/^ALLOWED_ORIGINS=$/ALLOWED_ORIGINS=http:\/\/localhost:8000/' .env
+          sed -i 's/^SMTP_USER=$/SMTP_USER=ci-test/' .env
+          sed -i 's/^SMTP_PASS=$/SMTP_PASS=ci-test/' .env
+      - run: pnpm install --frozen-lockfile
+      - name: Cache mongodb-memory-server binary
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.MONGOMS_DOWNLOAD_DIR }}
+          key: mongodb-binaries-${{ runner.os }}
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+  # Independent of code correctness — run in parallel, don't gate or get gated by anything.
+  spell-check:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run cspell
+        run: pnpm spell
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level high

@@ -13,9 +13,15 @@ import type {
 	ResendOtpInput,
 	VerifyOtpInput,
 } from "../lib/validators/user.schema";
-import ServiceManager from "../services";
+import AuthService from "../services/authServices";
+import MailService from "../services/mailService";
 
-class AuthController extends ServiceManager {
+class AuthController {
+	constructor(
+		private readonly authServices: AuthService = new AuthService(),
+		private readonly mailService: MailService = new MailService(),
+	) {}
+
 	/**
 	 * @desc    Register a new user
 	 * @route   POST /auth/register

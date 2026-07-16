@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authMiddleware } from "@/lib/middleware/auth";
-import ControllerManager from "../../controllers";
+import AuthController from "../../controllers/authController";
 import { validate } from "../../lib/middleware/validate";
 import {
 	LoginSchema,
@@ -9,21 +9,21 @@ import {
 	VerifyOtpSchema,
 } from "../../lib/validators/user.schema";
 
-class AuthRouter extends ControllerManager {
+class AuthRouter {
 	public router: Router;
+	private readonly authController: AuthController = new AuthController();
 
 	constructor() {
-		super();
 		this.router = Router();
 		this.initializeRoutes();
 	}
 
 	private initializeRoutes() {
-		this.router.post("/register", validate(RegisterSchema), super.authController.register);
-		this.router.post("/verify-otp", validate(VerifyOtpSchema), super.authController.verifyOtp);
-		this.router.post("/resend-otp", validate(ResendOtpSchema), super.authController.resendOtp);
-		this.router.post("/login", validate(LoginSchema), super.authController.login);
-		this.router.get("/me", authMiddleware, super.authController.getProfile);
+		this.router.post("/register", validate(RegisterSchema), this.authController.register);
+		this.router.post("/verify-otp", validate(VerifyOtpSchema), this.authController.verifyOtp);
+		this.router.post("/resend-otp", validate(ResendOtpSchema), this.authController.resendOtp);
+		this.router.post("/login", validate(LoginSchema), this.authController.login);
+		this.router.get("/me", authMiddleware, this.authController.getProfile);
 	}
 }
 
