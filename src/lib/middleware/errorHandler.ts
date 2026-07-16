@@ -1,6 +1,6 @@
 import type { Application, NextFunction, Request, Response } from "express";
 import type { MongoServerError } from "mongodb";
-import type { ErrorResponse } from "../../@types";
+import type { ErrorResponse } from "../../types";
 import { handleError } from "../handlers/handleError";
 
 /**

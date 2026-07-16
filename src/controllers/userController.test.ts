@@ -6,7 +6,11 @@ import type AuthService from "../services/authServices";
 import UserController from "./userController";
 
 function createResponse(locals: Record<string, unknown> = {}): Response {
-	return { locals, send: vi.fn() } as unknown as Response;
+	return {
+		locals,
+		status: vi.fn().mockReturnThis(),
+		send: vi.fn(),
+	} as unknown as Response;
 }
 
 describe("UserController.getUser", () => {

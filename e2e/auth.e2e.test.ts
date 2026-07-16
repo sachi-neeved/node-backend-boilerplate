@@ -12,7 +12,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 vi.mock("../src/services/mailService");
 
 import { createApp } from "../src/index";
-import { UserModel } from "../src/models";
+import { DEFAULT_ROLES, RoleModel, UserModel } from "../src/models";
 import MailService from "../src/services/mailService";
 
 const app = createApp();
@@ -21,6 +21,13 @@ let mongo: MongoMemoryServer;
 beforeAll(async () => {
 	mongo = await MongoMemoryServer.create();
 	await mongoose.connect(mongo.getUri());
+	// register() looks up the "user" role — this test manages its own Mongo connection
+	// independent of inItDb(), so it has to seed the same DEFAULT_ROLES itself.
+	await Promise.all(
+		DEFAULT_ROLES.map((role) =>
+			RoleModel.findOneAndUpdate({ name: role.name }, { $setOnInsert: role }, { upsert: true }),
+		),
+	);
 }, 60_000);
 
 afterAll(async () => {
@@ -33,6 +40,18 @@ beforeEach(async () => {
 	vi.mocked(MailService.prototype.sendOtpEmail).mockClear();
 	vi.mocked(MailService.prototype.sendWelcomeEmail).mockClear();
 });
+
+/** Registers, captures the mocked OTP email, and verifies a new user. Leaves them ready to log in. */
+async function registerAndVerify(email: string, password: string, firstName = "Ada") {
+	const registerRes = await request(app)
+		.post("/api/v1/auth/register")
+		.send({ email, password, firstName });
+	if (registerRes.status !== 200) return registerRes;
+
+	const calls = vi.mocked(MailService.prototype.sendOtpEmail).mock.calls;
+	const otp = calls[calls.length - 1]?.[2];
+	return request(app).post("/api/v1/auth/verify-otp").send({ email, otp });
+}
 
 describe("Auth flow: register -> verify-otp -> login -> /users/me", () => {
 	it("takes a new user through the full auth lifecycle", async () => {
@@ -70,5 +89,58 @@ describe("Auth flow: register -> verify-otp -> login -> /users/me", () => {
 
 		expect(meRes.status).toBe(200);
 		expect(meRes.body.response.email).toBe(email);
+	});
+
+	it("rejects registering the same email again once it's already verified", async () => {
+		const email = "dup@example.com";
+		const password = "password123";
+		await registerAndVerify(email, password);
+
+		const secondAttempt = await request(app)
+			.post("/api/v1/auth/register")
+			.send({ email, password, firstName: "Ada" });
+
+		expect(secondAttempt.status).toBe(409);
+	});
+
+	it("rejects login with the wrong password", async () => {
+		const email = "wrongpw@example.com";
+		await registerAndVerify(email, "correct-password");
+
+		const loginRes = await request(app)
+			.post("/api/v1/auth/login")
+			.send({ email, password: "wrong-password" });
+
+		expect(loginRes.status).toBe(401);
+	});
+});
+
+describe("Session lifecycle: login -> refresh -> logout -> refresh rejected", () => {
+	it("actually revokes the refresh token server-side on logout", async () => {
+		const email = "sessions@example.com";
+		const password = "password123";
+		await registerAndVerify(email, password);
+
+		const loginRes = await request(app).post("/api/v1/auth/login").send({ email, password });
+		const loginCookies = loginRes.get("Set-Cookie") ?? [];
+		expect(loginCookies.length).toBeGreaterThan(0);
+
+		// Refresh while the session is still valid — should issue a new access token.
+		const refreshRes = await request(app).post("/api/v1/auth/refresh").set("Cookie", loginCookies);
+		expect(refreshRes.status).toBe(200);
+		expect((refreshRes.get("Set-Cookie") ?? []).some((c) => c.startsWith("access_token="))).toBe(
+			true,
+		);
+
+		// Logout revokes the session tied to the refresh token.
+		const logoutRes = await request(app).post("/api/v1/auth/logout").set("Cookie", loginCookies);
+		expect(logoutRes.status).toBe(200);
+
+		// The same refresh token must no longer work — this is the whole point of server-side
+		// session tracking over plain stateless JWTs.
+		const refreshAfterLogout = await request(app)
+			.post("/api/v1/auth/refresh")
+			.set("Cookie", loginCookies);
+		expect(refreshAfterLogout.status).toBe(401);
 	});
 });

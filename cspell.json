@@ -26,7 +26,10 @@
 		"Sachidanand",
 		"asteasolutions",
 		"Neev",
-		"virtuals"
+		"virtuals",
+		"upsert",
+		"upserts",
+		"upserted"
 	],
 	"dictionaries": ["typescript", "node", "npm"]
 }

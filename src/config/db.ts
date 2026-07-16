@@ -8,6 +8,16 @@ import {
 } from "../lib/constants";
 import logger from "../lib/logger";
 import tryCatch from "../lib/utils/tryCatch";
+import { DEFAULT_ROLES, RoleModel } from "../models/Role";
+
+/** Upserts each system role so it always exists without clobbering any existing document. */
+const seedRoles = async () => {
+	await Promise.all(
+		DEFAULT_ROLES.map((role) =>
+			RoleModel.findOneAndUpdate({ name: role.name }, { $setOnInsert: role }, { upsert: true }),
+		),
+	);
+};
 
 /**
  * Initializes the MongoDB connection using the URI and pool settings defined in config.
@@ -30,6 +40,8 @@ const inItDb = async () => {
 	logger?.info(`Port: ${APP_PORT}`);
 	logger?.info(`NODE_ENV: ${NODE_ENV}`);
 	logger?.info("Database Status: Connected!");
+
+	await seedRoles();
 
 	mongoose.connection.on("error", (connErr: Error) => {
 		logger?.error(`Database error: ${connErr.message}`);

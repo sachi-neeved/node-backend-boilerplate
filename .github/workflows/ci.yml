@@ -61,7 +61,7 @@ jobs:
       - name: Env config check
         run: node -r ts-node/register -r tsconfig-paths/register -e "require('./src/lib/constants')"
       - name: Run unit tests
-        run: pnpm test
+        run: pnpm test:unit
 
   # Slow job (real MongoDB startup + app boot) — only runs once the fast correctness
   # checks above have already passed, so a broken build doesn't waste CI minutes here.

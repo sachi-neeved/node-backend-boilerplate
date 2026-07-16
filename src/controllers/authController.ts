@@ -95,16 +95,8 @@ class AuthController {
 		const { email, password } = req.body as LoginInput;
 		const user = await this.authServices.login(email, password);
 		if (user && "_id" in user) {
-			const accessToken = await this.authServices.createAccessToken({
-				id: user._id,
-				email: user.email,
-				firstName: user.firstName,
-			});
-			const refreshToken = await this.authServices.createRefreshToken({
-				id: user._id,
-				email: user.email,
-				firstName: user.firstName,
-			});
+			const accessToken = await this.authServices.createAccessToken(user);
+			const refreshToken = await this.authServices.createRefreshToken(user, req);
 			res.cookie(CookieName.AccessToken, accessToken, {
 				...cookieConfig,
 				maxAge: ACCESS_TOKEN_EXPIRY * 1000,
@@ -115,6 +107,41 @@ class AuthController {
 			});
 			buildResponse(res, { user });
 		}
+	});
+
+	/**
+	 * @desc    Issue a new access token using the refresh token cookie
+	 * @route   POST /auth/refresh
+	 * @access  Public
+	 * @returns A promise that resolves to void.
+	 */
+	public refresh = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+		const refreshToken = req.cookies?.[CookieName.RefreshToken] as string | undefined;
+		if (!refreshToken) {
+			return buildError(StatusCodes.UNAUTHORIZED, UserMessages.USER_INVALID_SESSION);
+		}
+		const accessToken = await this.authServices.refreshAccessToken(refreshToken);
+		res.cookie(CookieName.AccessToken, accessToken, {
+			...cookieConfig,
+			maxAge: ACCESS_TOKEN_EXPIRY * 1000,
+		});
+		buildResponse(res, { message: "Token refreshed" });
+	});
+
+	/**
+	 * @desc    Log out — revoke the session and clear auth cookies
+	 * @route   POST /auth/logout
+	 * @access  Private
+	 * @returns A promise that resolves to void.
+	 */
+	public logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+		const refreshToken = req.cookies?.[CookieName.RefreshToken] as string | undefined;
+		if (refreshToken) {
+			await this.authServices.revokeSession(refreshToken);
+		}
+		res.clearCookie(CookieName.AccessToken, cookieConfig);
+		res.clearCookie(CookieName.RefreshToken, cookieConfig);
+		buildResponse(res, { message: "Logged out successfully" });
 	});
 }
 

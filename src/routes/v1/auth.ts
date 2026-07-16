@@ -23,6 +23,8 @@ class AuthRouter {
 		this.router.post("/verify-otp", validate(VerifyOtpSchema), this.authController.verifyOtp);
 		this.router.post("/resend-otp", validate(ResendOtpSchema), this.authController.resendOtp);
 		this.router.post("/login", validate(LoginSchema), this.authController.login);
+		this.router.post("/refresh", this.authController.refresh);
+		this.router.post("/logout", authMiddleware, this.authController.logout);
 		this.router.get("/me", authMiddleware, this.authController.getProfile);
 	}
 }

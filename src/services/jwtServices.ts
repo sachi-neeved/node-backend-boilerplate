@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
-import type { JwtPayload } from "../@types";
 import { JWT_SECRET_KEY } from "../lib//constants";
 import buildError from "../lib//utils/buildError";
 import { StatusCodes } from "../lib//utils/statusCodes";
+import type { JwtPayload } from "../types";
 
 /**
  * Class for JWT services.

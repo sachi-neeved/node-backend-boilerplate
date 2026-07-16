@@ -1,6 +1,6 @@
 import { Router } from "express";
 import UserController from "../../controllers/userController";
-import { authMiddleware } from "../../lib/middleware/auth";
+import { authMiddleware, requirePermission } from "../../lib/middleware/auth";
 
 // v2 breaking change: GET /me returns { name: { first, last } } instead of { firstName, lastName }
 class UserV2Router {
@@ -13,7 +13,12 @@ class UserV2Router {
 	}
 
 	private initializeRoutes() {
-		this.router.get("/me", authMiddleware, this.userController.getUser);
+		this.router.get(
+			"/me",
+			authMiddleware,
+			requirePermission("read", "profile"),
+			this.userController.getUser,
+		);
 	}
 }
 

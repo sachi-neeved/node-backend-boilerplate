@@ -17,8 +17,8 @@ registerV1UsersPaths(v1Registry);
 registerV2UsersPaths(v2Registry);
 
 const baseInfo = {
-	title: "Court Record API",
-	description: "REST API for the Court Record backend",
+	title: "NodeJS Boilerplate API",
+	description: "REST API for the NodeJS Boilerplate backend",
 };
 
 export function generateV1Doc() {

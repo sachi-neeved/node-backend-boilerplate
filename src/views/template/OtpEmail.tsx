@@ -19,12 +19,12 @@ export default function OtpEmail({ firstName, otp }: OtpEmailProps) {
 	return (
 		<Html lang="en">
 			<Head />
-			<Preview>Your Court Record verification code: {otp}</Preview>
+			<Preview>Your NodeJS Boilerplate verification code: {otp}</Preview>
 			<Body style={styles.body}>
 				<Container style={styles.container}>
 					{/* ── Header ── */}
 					<Section style={styles.header}>
-						<Text style={styles.brand}>⚖️ Court Record</Text>
+						<Text style={styles.brand}>⚖️ NodeJS Boilerplate</Text>
 						<Text style={styles.tagline}>Secure Legal Record Management</Text>
 					</Section>
 
@@ -38,8 +38,8 @@ export default function OtpEmail({ firstName, otp }: OtpEmailProps) {
 
 						<Text style={styles.greeting}>Hi {firstName},</Text>
 						<Text style={styles.body_text}>
-							To verify your identity and access your Court Record account, enter the one-time code
-							below. For your security, this code will expire in <strong>10 minutes</strong>.
+							To verify your identity and access your NodeJS Boilerplate account, enter the one-time
+							code below. For your security, this code will expire in <strong>10 minutes</strong>.
 						</Text>
 
 						{/* ── OTP box ── */}
@@ -55,7 +55,7 @@ export default function OtpEmail({ firstName, otp }: OtpEmailProps) {
 							<Text style={styles.warning_icon}>⚠️</Text>
 							<Text style={styles.security_note}>
 								If you did not request this code, please ignore this email and ensure your account
-								is secure. Court Record will never ask you to share this code.
+								is secure. NodeJS Boilerplate will never ask you to share this code.
 							</Text>
 						</Section>
 					</Section>
@@ -63,7 +63,7 @@ export default function OtpEmail({ firstName, otp }: OtpEmailProps) {
 					{/* ── Footer ── */}
 					<Section style={styles.footer}>
 						<Text style={styles.footer_copy}>
-							© {new Date().getFullYear()} Court Record &nbsp;·&nbsp; All rights reserved
+							© {new Date().getFullYear()} NodeJS Boilerplate &nbsp;·&nbsp; All rights reserved
 						</Text>
 						<Text style={styles.footer_links}>
 							Privacy Policy &nbsp;·&nbsp; Terms of Service &nbsp;·&nbsp; Support

@@ -1,4 +1,4 @@
-import type { QueryFilter } from "mongoose";
+import type { QueryFilter, Types } from "mongoose";
 import { type UserData, type UserDocument, UserModel } from "../models";
 import BaseRepository from "./baseRepository";
 
@@ -10,8 +10,13 @@ class UserRepository extends BaseRepository<UserDocument, UserData> {
 		super(UserModel);
 	}
 
+	/** Populates `roleId` — needed anywhere the caller has to read the role's name/permissions. */
 	findOneWithPassword(filter: QueryFilter<UserDocument>): Promise<UserDocument | null> {
-		return this.model.findOne(filter).select("+password");
+		return this.model.findOne(filter).select("+password").populate("roleId");
+	}
+
+	findByIdWithRole(_id: Types.ObjectId): Promise<UserDocument | null> {
+		return this.model.findById(_id).populate("roleId");
 	}
 }
 

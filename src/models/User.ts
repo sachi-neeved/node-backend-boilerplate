@@ -7,15 +7,20 @@ import mongoose, { type Document, Schema, type Types } from "mongoose";
  * @property {string} password - The bcrypt-hashed password of the user.
  * @property {string} firstName - The first name of the user.
  * @property {string} [lastName] - The last name of the user (optional).
+ * @property {string} [phone] - The user's phone number (optional).
+ * @property {Types.ObjectId} roleId - Reference to the user's Role document.
+ * @property {boolean} isVerified - Whether the user's email has been verified via OTP.
+ * @property {boolean} isActive - Whether the account is enabled.
  */
 export interface UserData {
 	email: string;
 	password: string;
 	firstName: string;
 	lastName?: string;
+	phone?: string;
+	roleId: Types.ObjectId;
 	isVerified: boolean;
-	otp?: string;
-	otpExpiry?: Date;
+	isActive: boolean;
 }
 
 export type UserDocument = Document<Types.ObjectId> & UserData;
@@ -27,9 +32,10 @@ const UserSchema = new Schema<UserDocument>(
 		password: { type: String, required: true, select: false },
 		firstName: { type: String, required: true },
 		lastName: { type: String },
+		phone: { type: String },
+		roleId: { type: Schema.Types.ObjectId, ref: "Role", required: true },
 		isVerified: { type: Boolean, default: false },
-		otp: { type: String },
-		otpExpiry: { type: Date },
+		isActive: { type: Boolean, default: true },
 	},
 	{
 		timestamps: true,

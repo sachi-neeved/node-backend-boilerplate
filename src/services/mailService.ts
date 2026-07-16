@@ -30,12 +30,12 @@ class MailService {
 
 	async sendOtpEmail(to: string, firstName: string, otp: string) {
 		const html = await render(createElement(OtpEmail, { firstName, otp }));
-		await this.send(to, "Your Court Record verification code", html);
+		await this.send(to, "Your NodeJS Boilerplate verification code", html);
 	}
 
 	async sendWelcomeEmail(to: string, firstName: string) {
 		const html = await render(createElement(WelcomeEmail, { firstName }));
-		await this.send(to, "Welcome to Court Record", html);
+		await this.send(to, "Welcome to NodeJS Boilerplate", html);
 	}
 }
 
