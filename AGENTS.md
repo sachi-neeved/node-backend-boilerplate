@@ -226,15 +226,20 @@ DI container or a base-class `Manager`.
 
 ## Local gates
 
-- **Pre-commit** (`.husky/pre-commit`): Biome (auto-fixes staged files), cspell, then
-  `pnpm test:coverage`. The coverage run enforces `statements: 80, lines: 80` (configured in
-  `vitest.config.ts`'s `coverage.thresholds`) — a commit that drops below that fails. Branch/
-  function coverage aren't gated yet (they sit lower today); tighten those thresholds only
-  once real coverage clears them, not by lowering the bar.
-- **CI** (`.github/workflows/ci.yml`): type-check, format/lint, unit tests, and dependency
-  audit run in parallel with no ordering dependency; e2e tests run only after those pass
-  (they're the slowest job — no point paying for a real Mongo boot if a fast check already
-  failed); spell-check runs independently of all of it.
+- **Pre-commit** (`.husky/pre-commit`), in order: (1) — only when `package.json`/
+  `pnpm-lock.yaml` are staged — `pnpm audit --audit-level high`, runs first so a vulnerable
+  dependency fails fast before spending time on anything else; (2) Biome (auto-fixes staged
+  files); (3) cspell; (4) `pnpm test:coverage` last, since it's the slowest check. The
+  coverage run enforces `statements: 80, lines: 80` (configured in `vitest.config.ts`'s
+  `coverage.thresholds`) — a commit that drops below that fails. Branch/function coverage
+  aren't gated yet (they sit lower today); tighten those thresholds only once real coverage
+  clears them, not by lowering the bar.
+- **CI** (`.github/workflows/ci.yml`): dependency-audit runs first with no `needs:` and gates
+  type-check, format/lint, and unit-tests (`needs: [dependency-audit]`) — a vulnerable
+  dependency fails the whole pipeline immediately instead of after the other jobs already
+  spent runner time. Those three then run in parallel with each other. e2e-tests runs only
+  after all three pass (it's the slowest job — no point paying for a real Mongo boot if a
+  fast check already failed). spell-check runs independently of all of it.
 
 ## Checklist for a new feature
 

@@ -10,7 +10,7 @@ A simple, class-based Node.js API boilerplate for rapid backend development.
 - **Auth** — JWT (access + refresh tokens), bcrypt, HTTP-only cookies, server-side session revocation
 - **Authorization** — Role-based (`user` / `admin`) permissions via CASL
 - **Email** — Nodemailer with React Email templates
-- **Cache** — Redis (optional, via express-expeditious)
+- **Cache** — Redis (optional, direct `redis` client)
 - **Validation** — Zod schemas
 - **API Docs** — Swagger UI (`/api-docs`)
 - **Testing** — Vitest (unit + e2e), Supertest, mongodb-memory-server
@@ -156,6 +156,7 @@ instead of using a hardcoded rule set.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push/PR: type-check, format/lint, unit tests, and
-dependency audit run in parallel; e2e tests run afterward (only once the fast checks pass);
-spell-check runs independently. See [AGENTS.md](./AGENTS.md) for the local pre-commit hook.
+`.github/workflows/ci.yml` runs on every push/PR: dependency audit runs first and gates
+everything below it — type-check, format/lint, and unit tests run in parallel once it passes;
+e2e tests run afterward (only once those pass too); spell-check runs independently of all of
+it. See [AGENTS.md](./AGENTS.md) for the local pre-commit hook.
