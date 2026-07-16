@@ -1,5 +1,14 @@
 #!/bin/sh
 node -e "require('dotenv-safe').config()"
+
+# Runs first: only re-run the dependency audit when the lockfile/manifest actually
+# changed — no need to hit the network (or block on a new advisory) for commits that
+# didn't touch deps. A vulnerable dependency should fail fast, before spending time
+# on formatting/spelling/coverage.
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE "^(package\.json|pnpm-lock\.yaml)$"; then
+	pnpm audit --audit-level high
+fi
+
 pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true $(git diff --cached --name-only --diff-filter=ACMR)
 git add $(git diff --cached --name-only --diff-filter=ACMR)
 pnpm cspell --no-progress --no-summary $(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(ts|js|json|md)$")

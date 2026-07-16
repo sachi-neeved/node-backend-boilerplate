@@ -6,9 +6,28 @@ on:
   pull_request:
 
 jobs:
-  # Fast, independent checks — no service setup, run in parallel with no `needs:`.
+  # Runs first and gates everything else below (except spell-check, which is unrelated
+  # to code correctness): a vulnerable dependency should fail CI immediately, before any
+  # other job spends runner time — mirroring the pre-commit hook's audit-first ordering.
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level high
+
+  # Fast, independent checks — no service setup, run in parallel with each other
+  # (but only after dependency-audit passes).
   type-check:
     name: Type Check
+    needs: [dependency-audit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +41,7 @@ jobs:
 
   format-lint-check:
     name: Format/Lint Check
+    needs: [dependency-audit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +56,7 @@ jobs:
 
   unit-tests:
     name: Unit Tests
+    needs: [dependency-audit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -104,17 +125,3 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Run cspell
         run: pnpm spell
-
-  dependency-audit:
-    name: Dependency Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24.12.0"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Run pnpm audit
-        run: pnpm audit --audit-level high
